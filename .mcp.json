@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "unity": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "C:\\Users\\yitianchen\\.codebuddy\\mcp-servers\\unity-mcp-server\\src\\index.js"
+      ],
+      "env": {
+        "UNITY_HUB_PATH": "G:\\Unity Hub\\Unity Hub.exe",
+        "UNITY_BRIDGE_PORT": "7890"
+      },
+      "description": "Unity Editor MCP - 让 AI 助手直接操作 Unity Editor（管理 GameObject、组件、场景、播放模式等）"
+    }
+  }
+}
