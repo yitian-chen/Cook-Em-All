@@ -26,7 +26,8 @@
 - **两层系统**：
   - **格子层**：玩家在商店购买格子（1×1、1×2、1×3、2×2、2×3 等），拼排在底板上。初始有两个 2×3 格子并排放底板中间。
   - **道具层**：武器和调味料放在格子上方，不能直接放底板。道具尺寸有 1×1、1×2、1×3、2×2、2×3 等，玩家可在背包中自行排列（类似背包英雄/Tarkov 库存）。
-- **旋转**：拖拽中按 R 键可切换物品/格子宽高（如 1×2 ↔ 2×1）。
+- **旋转**：拖拽中按 R 键或鼠标右键可切换物品/格子宽高（如 1×2 ↔ 2×1）。
+- **物品尺寸上下文**：实体在商店槽位内以等比缩放的 fit 尺寸显示（维持 gridWidth×gridHeight 宽高比），拖出后立即还原真实背包尺寸。暂存区和背包内均使用真实尺寸。
 - **邻接加成**：调味料对相邻格子中的武器产生加成。各个调味料应有**不同的加成机制**（加成范围、效果类型、数值），由策划后续给出。架构上必须做成**数据驱动、可灵活配置**，不能写死任何具体加成规则。
 
 ### 商店系统（仅局内）
@@ -56,10 +57,10 @@
 
 | 新系统 | 现状 | 优先级 |
 |---|---|---|
-| **背包网格系统** | 现有 `Inventory.cs` 只是收集品计数器，不是网格 | P0，核心 |
-| **物品放置 + 邻接查询** | 武器目前挂在 AbilityManager 下，无空间概念 | P0，核心 |
+| **背包网格系统** | ✅ 原型已实现（`Assets/Scripts/Backpack/`：DraggableEntity 基类 + GridTile/DraggableItem 子类 + BackpackGrid 协调器 + 两层占用表），旧 `Inventory.cs` 待淘汰 | P0，核心 |
+| **物品放置 + 邻接查询** | ✅ 原型已实现（BackpackGrid 维护 gridTileMap/itemMap 两张占用表，邻接查询基础已具备） | P0，核心 |
 | **调味料物品类型 + 加成规则引擎** | 现有升级是"选3选1"升级树，不是可放置实体 | P0，核心 |
-| **商店 UI + 交易逻辑** | 完全不存在 | P1，仅局内 |
+| **商店 UI + 交易逻辑** | 拖拽/槽位原型已实现，购买逻辑未做 | P1，仅局内 |
 | **波次整备阶段流程** | 现有是连续战斗，无波次间整备 | P1 |
 | **主菜单/角色选择扩展** | 现有 MainMenu 较简单 | P2 |
 
@@ -113,4 +114,6 @@
 - 武器/能力系统架构：详见 `Assets/Scripts/Character/Abilities/Ability.cs` 及其子类
 - 升级值系统：详见 `Assets/Scripts/Utilities/UpgradeableValues.cs`
 - 关卡配置：详见 `Assets/Scripts/ScriptableObjects/LevelBlueprint.cs`
-- 现有 Inventory（待重构）：`Assets/Scripts/Gameplay/Inventory/Inventory.cs`
+- 背包两层系统：详见 `Assets/Scripts/Backpack/`（DraggableEntity / GridTile / DraggableItem / BackpackGrid / BackpackSlot / ShopSlot / StagingArea）
+- 原型场景：`Assets/Scenes/Game/Shop Prototype.unity` + `Assets/Scripts/Prototype/ShopPrototype.cs`
+- 旧 Inventory（待淘汰）：`Assets/Scripts/Gameplay/Inventory/Inventory.cs`
