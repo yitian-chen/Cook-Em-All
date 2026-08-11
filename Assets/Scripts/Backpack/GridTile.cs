@@ -9,6 +9,15 @@ namespace Vampire.Backpack
     /// </summary>
     public class GridTile : DraggableEntity
     {
+        /// <summary>
+        /// 身上承载道具时禁止拖拽，避免移动后道具落到底板上。
+        /// 在商店/暂存区（currentGrid == null）时允许拖拽。
+        /// </summary>
+        public override bool CanDrag()
+        {
+            return currentGrid == null || !currentGrid.HasItemsOnTile(this);
+        }
+
         public override bool CanPlaceAt(BackpackGrid grid, int col, int row)
         {
             return grid != null && grid.CanPlaceGridTile(this, col, row);

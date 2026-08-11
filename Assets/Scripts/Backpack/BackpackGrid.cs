@@ -133,6 +133,21 @@ namespace Vampire.Backpack
             return col >= 0 && col < cols && row >= 0 && row < rows && gridTileMap[col, row] != null;
         }
 
+        /// <summary>该格子上是否承载着任何道具（用于禁止移动带道具的格子）。</summary>
+        public bool HasItemsOnTile(GridTile tile)
+        {
+            if (tile == null) return false;
+            for (int c = 0; c < cols; c++)
+            {
+                for (int r = 0; r < rows; r++)
+                {
+                    if (gridTileMap[c, r] == tile && itemMap[c, r] != null)
+                        return true;
+                }
+            }
+            return false;
+        }
+
         // ===================== 格子层 =====================
 
         /// <summary>格子能否放在指定锚点：footprint 每格在界内且无其他格子占用。</summary>

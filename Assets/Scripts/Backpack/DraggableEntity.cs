@@ -118,10 +118,14 @@ namespace Vampire.Backpack
         public abstract void PlaceAt(BackpackGrid grid, int col, int row);
         public abstract void RemoveFromGrid();
 
+        /// <summary>是否允许开始拖拽。子类可覆盖（如 GridTile 身上有道具时禁止移动）。</summary>
+        public virtual bool CanDrag() => true;
+
         // —— 共享拖拽逻辑 ——
         public void OnBeginDrag(PointerEventData eventData)
         {
             if (eventData.button != PointerEventData.InputButton.Left) return;
+            if (!CanDrag()) return;
 
             IsDragging = true;
             originalParent = transform.parent;
