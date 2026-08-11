@@ -5,74 +5,78 @@ using UnityEngine.UI;
 namespace Vampire.Backpack
 {
     /// <summary>
-    /// 背包格子组件。挂到背包网格的每个格子上。
-    /// 接收拖入的物品，对齐到格子中心。
-    /// 原型阶段不限制每格放几个物品，也不处理物品尺寸占多格的逻辑。
+    /// 底板格子组件。5×7 底板上的每个位置一个，视觉为暗色底板。
+    /// 接收 drop 事件并委托给 BackpackGrid 处理（grid 区分格子/道具两层放置规则）。
     /// </summary>
+    [RequireComponent(typeof(Image))]
     public class BackpackSlot : MonoBehaviour, IDropHandler
     {
-        [Tooltip("是否已解锁。锁定格拒绝接收物品。")]
-        [SerializeField] private bool unlocked = true;
-
-        private RectTransform rectTransform;
+        private int col;
+        private int row;
+        private BackpackGrid grid;
         private Image backgroundImage;
+        private static readonly Color BaseplateColor = new Color(0.15f, 0.15f, 0.15f, 0.6f);
+
+        public int Col => col;
+        public int Row => row;
+        public RectTransform Rect => GetComponent<RectTransform>();
 
         void Awake()
         {
-            rectTransform = GetComponent<RectTransform>();
             backgroundImage = GetComponent<Image>();
         }
 
-        /// <summary>
-        /// 运行时设置格子的解锁状态，并同步视觉（锁定格变深灰半透明）。
-        /// </summary>
-        public void SetUnlocked(bool isUnlocked)
+        public void Init(int col, int row, BackpackGrid grid)
         {
-            unlocked = isUnlocked;
+            this.col = col;
+            this.row = row;
+            this.grid = grid;
             if (backgroundImage != null)
             {
-                backgroundImage.color = isUnlocked
-                    ? new Color(1f, 1f, 1f, 0.3f)
-                    : new Color(0.2f, 0.2f, 0.2f, 0.5f);
+                backgroundImage.color = BaseplateColor;
+            }
+        }
+
+        /// <summary>高亮预览：Valid=绿色，Invalid=红色，None=恢复底板色。</summary>
+        public void SetHighlight(HighlightState state)
+        {
+            if (backgroundImage == null) return;
+            switch (state)
+            {
+                case HighlightState.Valid:
+                    backgroundImage.color = new Color(0.3f, 0.9f, 0.4f, 0.5f);
+                    break;
+                case HighlightState.Invalid:
+                    backgroundImage.color = new Color(0.9f, 0.3f, 0.3f, 0.5f);
+                    break;
+                default:
+                    backgroundImage.color = BaseplateColor;
+                    break;
+            }
+        }
+
+        public void ClearHighlight()
+        {
+            if (backgroundImage != null)
+            {
+                backgroundImage.color = BaseplateColor;
             }
         }
 
         public void OnDrop(PointerEventData eventData)
         {
-            if (!unlocked) return;
+            if (grid == null || eventData.pointerDrag == null) return;
+            DraggableEntity entity = eventData.pointerDrag.GetComponent<DraggableEntity>();
+            if (entity == null) return;
 
-            DraggableItem item = GetDraggableFromEvent(eventData);
-            if (item == null) return;
-
-            // 若该格已有物品，把原物品推回到拖拽者原父级（简单交换占位）
-            if (transform.childCount > 0)
-            {
-                Transform existing = transform.GetChild(0);
-                DraggableItem existingItem = existing.GetComponent<DraggableItem>();
-                if (existingItem != null && existingItem != item)
-                {
-                    existingItem.ReturnToOriginal();
-                }
-            }
-
-            item.transform.SetParent(transform);
-            CenterItem(item);
+            grid.TryPlaceAtCursor(entity, eventData.position, eventData.pressEventCamera);
         }
+    }
 
-        /// <summary>
-        /// 把物品在本格内居中。
-        /// </summary>
-        private void CenterItem(DraggableItem item)
-        {
-            RectTransform itemRect = item.GetComponent<RectTransform>();
-            itemRect.anchoredPosition = Vector2.zero;
-        }
-
-        private static DraggableItem GetDraggableFromEvent(PointerEventData eventData)
-        {
-            return eventData.pointerDrag != null
-                ? eventData.pointerDrag.GetComponent<DraggableItem>()
-                : null;
-        }
+    public enum HighlightState
+    {
+        None,
+        Valid,
+        Invalid
     }
 }

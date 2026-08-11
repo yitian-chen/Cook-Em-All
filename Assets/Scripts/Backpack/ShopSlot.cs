@@ -4,48 +4,44 @@ using UnityEngine.EventSystems;
 namespace Vampire.Backpack
 {
     /// <summary>
-    /// 商店槽位组件。接收拖入的物品，对齐到槽位中心。
-    /// 原型阶段无购买逻辑，允许物品拖回商店槽。
+    /// 商店槽位组件。接收拖入的实体（格子或道具），对齐到槽位中心。
+    /// 原型阶段无购买逻辑，允许实体拖回商店槽。
     /// </summary>
     public class ShopSlot : MonoBehaviour, IDropHandler
     {
-        private RectTransform rectTransform;
-
-        void Awake()
-        {
-            rectTransform = GetComponent<RectTransform>();
-        }
-
         public void OnDrop(PointerEventData eventData)
         {
-            DraggableItem item = GetDraggableFromEvent(eventData);
-            if (item == null) return;
+            DraggableEntity entity = GetEntityFromEvent(eventData);
+            if (entity == null) return;
 
-            // 若该槽已有物品，把原物品推回到拖拽者原父级
+            // 离开背包（占用已在 OnBeginDrag 中清除）
+            entity.ClearGridAssociation();
+
+            // 若该槽已有实体，把原实体推回到拖拽者原父级
             if (transform.childCount > 0)
             {
                 Transform existing = transform.GetChild(0);
-                DraggableItem existingItem = existing.GetComponent<DraggableItem>();
-                if (existingItem != null && existingItem != item)
+                DraggableEntity existingEntity = existing.GetComponent<DraggableEntity>();
+                if (existingEntity != null && existingEntity != entity)
                 {
-                    existingItem.ReturnToOriginal();
+                    existingEntity.ReturnToOriginal();
                 }
             }
 
-            item.transform.SetParent(transform);
-            CenterItem(item);
+            entity.transform.SetParent(transform);
+            CenterEntity(entity);
         }
 
-        private void CenterItem(DraggableItem item)
+        private void CenterEntity(DraggableEntity entity)
         {
-            RectTransform itemRect = item.GetComponent<RectTransform>();
-            itemRect.anchoredPosition = Vector2.zero;
+            RectTransform rt = entity.GetComponent<RectTransform>();
+            rt.anchoredPosition = Vector2.zero;
         }
 
-        private static DraggableItem GetDraggableFromEvent(PointerEventData eventData)
+        private static DraggableEntity GetEntityFromEvent(PointerEventData eventData)
         {
             return eventData.pointerDrag != null
-                ? eventData.pointerDrag.GetComponent<DraggableItem>()
+                ? eventData.pointerDrag.GetComponent<DraggableEntity>()
                 : null;
         }
     }

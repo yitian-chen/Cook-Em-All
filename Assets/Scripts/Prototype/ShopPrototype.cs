@@ -4,8 +4,9 @@ using UnityEngine.UI;
 namespace Vampire.Backpack
 {
     /// <summary>
-    /// 原型场景启动脚本。挂在 Canvas 上，Start() 里生成背包格、商店槽和占位物品。
-    /// 不含任何游戏逻辑，仅用于验证背包+商店页面的布局与拖拽交互。
+    /// 原型场景启动脚本。挂在 Canvas 上。
+    /// 初始化 5×7 底板，放置两个 2×3 格子在底板中间，商店放道具和格子出售。
+    /// 两层系统：底板（暗）→ 格子（半透明）→ 道具（实体）。
     /// </summary>
     public class ShopPrototype : MonoBehaviour
     {
@@ -13,50 +14,44 @@ namespace Vampire.Backpack
         [SerializeField] private BackpackSlot backpackSlotPrefab;
         [SerializeField] private ShopSlot shopSlotPrefab;
         [SerializeField] private DraggableItem itemPrefab;
+        [SerializeField] private GridTile gridTilePrefab;
 
         [Header("Container References")]
         [SerializeField] private Transform backpackGridParent;
         [SerializeField] private Transform shopGridParent;
         [SerializeField] private Transform stagingAreaParent;
 
-        [Header("Backpack Settings")]
+        [Header("Baseplate Settings")]
         [SerializeField] private int backpackColumns = 5;
-        [SerializeField] private int backpackRows = 6;
-        [Tooltip("前 N 个格子解锁，其余锁定（按行优先顺序）")]
-        [SerializeField] private int unlockedSlotCount = 12;
+        [SerializeField] private int backpackRows = 7;
 
         [Header("Shop Settings")]
         [SerializeField] private int shopSlotCount = 6;
 
-        [Header("Placeholder Item Colors")]
+        [Header("Placeholder Colors")]
         [SerializeField] private Color weaponColor = new Color(0.85f, 0.25f, 0.25f);
         [SerializeField] private Color seasoningColor = new Color(0.95f, 0.8f, 0.25f);
-        [SerializeField] private Color gridExpansionColor = new Color(0.3f, 0.8f, 0.4f);
+        [SerializeField] private Color gridTileColor = new Color(0.7f, 0.85f, 0.95f, 0.6f);
+
+        private BackpackGrid backpackGrid;
 
         private void Start()
         {
-            GenerateBackpackGrid();
+            InitBackpackGrid();
             GenerateShop();
-            SeedInitialItems();
+            SeedInitialEntities();
         }
 
-        /// <summary>
-        /// 生成背包网格：前 unlockedSlotCount 个解锁，其余锁定。
-        /// </summary>
-        private void GenerateBackpackGrid()
+        private void InitBackpackGrid()
         {
-            int total = backpackColumns * backpackRows;
-            for (int i = 0; i < total; i++)
+            backpackGrid = backpackGridParent.GetComponent<BackpackGrid>();
+            if (backpackGrid == null)
             {
-                BackpackSlot slot = Instantiate(backpackSlotPrefab, backpackGridParent);
-                slot.gameObject.SetActive(true);
-                slot.SetUnlocked(i < unlockedSlotCount);
+                backpackGrid = backpackGridParent.gameObject.AddComponent<BackpackGrid>();
             }
+            backpackGrid.Init(backpackColumns, backpackRows, backpackSlotPrefab);
         }
 
-        /// <summary>
-        /// 生成商店槽位（2×3，由 GridLayoutGroup 自动排布）。
-        /// </summary>
         private void GenerateShop()
         {
             for (int i = 0; i < shopSlotCount; i++)
@@ -67,49 +62,91 @@ namespace Vampire.Backpack
         }
 
         /// <summary>
-        /// 放置初始占位物品：背包前 2 格各放一个，商店 6 个槽各放一个，暂存区放 1 个。
+        /// 初始实体：
+        /// - 底板中间放两个 2×3 格子（并排，cols 0-3, rows 2-4）
+        /// - 第一个格子上放一个 1×1 道具
+        /// - 商店放几个道具和一个 1×2 格子出售
         /// </summary>
-        private void SeedInitialItems()
+        private void SeedInitialEntities()
         {
-            // 背包前 2 格放武器
-            SpawnItemIn(backpackGridParent.GetChild(0), "W1", weaponColor);
-            SpawnItemIn(backpackGridParent.GetChild(1), "S1", seasoningColor);
+            // 两个 2×3 格子并排放底板中间
+            SpawnGridTile(0, 2, 2, 3);  // cols 0-1, rows 2-4
+            SpawnGridTile(2, 2, 2, 3);  // cols 2-3, rows 2-4
 
-            // 商店 6 个槽各放一个物品，类型循环
-            for (int i = 0; i < shopSlotCount; i++)
-            {
-                Transform slot = shopGridParent.GetChild(i);
-                Color c = i % 3 == 0 ? weaponColor : (i % 3 == 1 ? seasoningColor : gridExpansionColor);
-                string label = i % 3 == 0 ? "W" : (i % 3 == 1 ? "S" : "G");
-                SpawnItemIn(slot, label + (i + 1), c);
-            }
+            // 在第一个格子上放一个 1×1 道具
+            SpawnItem(0, 2, "W1", 1, 1, weaponColor);
 
-            // 暂存区放一个物品在左上角附近
-            DraggableItem stagingItem = Instantiate(itemPrefab, stagingAreaParent);
-            stagingItem.gameObject.SetActive(true);
-            ConfigureItem(stagingItem, "G2", gridExpansionColor);
-            RectTransform stagingRect = stagingItem.GetComponent<RectTransform>();
-            stagingRect.anchoredPosition = new Vector2(-200, 50);
+            // 商店：道具 + 格子出售
+            SpawnItemInShop(0, "S1", 1, 1, seasoningColor);
+            SpawnItemInShop(1, "W2", 1, 2, weaponColor);
+            SpawnGridTileInShop(2, 1, 2);
+            SpawnItemInShop(3, "S2", 1, 3, seasoningColor);
+            SpawnGridTileInShop(4, 2, 2);
+            SpawnItemInShop(5, "W3", 1, 1, weaponColor);
         }
 
-        private void SpawnItemIn(Transform parent, string label, Color color)
+        // —— 背包内生成 ——
+        private void SpawnGridTile(int col, int row, int w, int h)
         {
-            DraggableItem item = Instantiate(itemPrefab, parent);
+            GridTile tile = Instantiate(gridTilePrefab, backpackGridParent);
+            tile.gameObject.SetActive(true);
+            ConfigureGridTile(tile, w, h, gridTileColor);
+            backpackGrid.PlaceGridTile(tile, col, row);
+        }
+
+        private void SpawnItem(int col, int row, string label, int w, int h, Color color)
+        {
+            DraggableItem item = Instantiate(itemPrefab, backpackGridParent);
             item.gameObject.SetActive(true);
-            ConfigureItem(item, label, color);
-            RectTransform itemRect = item.GetComponent<RectTransform>();
-            itemRect.anchoredPosition = Vector2.zero;
+            ConfigureItem(item, label, w, h, color);
+            backpackGrid.PlaceItem(item, col, row);
         }
 
-        private void ConfigureItem(DraggableItem item, string label, Color color)
+        // —— 商店内生成 ——
+        private void SpawnItemInShop(int slotIndex, string label, int w, int h, Color color)
         {
-            // 设置物品背景颜色（Item prefab 上应有 Image 组件）
+            if (slotIndex < 0 || slotIndex >= shopGridParent.childCount) return;
+            Transform slot = shopGridParent.GetChild(slotIndex);
+            DraggableItem item = Instantiate(itemPrefab, slot);
+            item.gameObject.SetActive(true);
+            ConfigureItem(item, label, w, h, color);
+            item.ClearGridAssociation();
+            item.GetComponent<RectTransform>().anchoredPosition = Vector2.zero;
+        }
+
+        private void SpawnGridTileInShop(int slotIndex, int w, int h)
+        {
+            if (slotIndex < 0 || slotIndex >= shopGridParent.childCount) return;
+            Transform slot = shopGridParent.GetChild(slotIndex);
+            GridTile tile = Instantiate(gridTilePrefab, slot);
+            tile.gameObject.SetActive(true);
+            ConfigureGridTile(tile, w, h, gridTileColor);
+            tile.ClearGridAssociation();
+            tile.GetComponent<RectTransform>().anchoredPosition = Vector2.zero;
+        }
+
+        // —— 配置 ——
+        private void ConfigureItem(DraggableItem item, string label, int w, int h, Color color)
+        {
             Image bg = item.GetComponent<Image>();
             if (bg != null) bg.color = color;
 
-            // 设置标签文本（Item prefab 上应有子物体 TMP Text）
-            TMPro.TextMeshProUGUI txt = item.GetComponentInChildren<TMPro.TextMeshProUGUI>();
+            item.SetLabel(label);
+            var txt = item.GetComponentInChildren<TMPro.TextMeshProUGUI>();
             if (txt != null) txt.text = label;
+
+            item.SetGridSize(w, h, backpackGrid.CellSize, backpackGrid.Spacing);
+        }
+
+        private void ConfigureGridTile(GridTile tile, int w, int h, Color color)
+        {
+            Image bg = tile.GetComponent<Image>();
+            if (bg != null) bg.color = color;
+
+            var txt = tile.GetComponentInChildren<TMPro.TextMeshProUGUI>();
+            if (txt != null) txt.text = w + "x" + h;
+
+            tile.SetGridSize(w, h, backpackGrid.CellSize, backpackGrid.Spacing);
         }
     }
 }
