@@ -76,3 +76,10 @@ crashlytics-build.properties
 
 # OSX
 .DS_Store
+
+# CodeBuddy 本地配置（含 MCP 连接缓存、plans 等本地状态）
+.codebuddy/
+
+# 临时截图
+/[Aa]ssets/[Ss]creenshots/
+/[Aa]ssets/[Ss]creenshots.meta
