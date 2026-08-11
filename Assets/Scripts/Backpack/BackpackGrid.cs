@@ -168,6 +168,7 @@ namespace Vampire.Backpack
             }
 
             RegisterEntity(tile);
+            ApplyEntitySize(tile);
             PositionEntity(tile, anchorCol, anchorRow, gridTileContainer);
             tile.SetPlacement(this, anchorCol, anchorRow);
         }
@@ -219,6 +220,7 @@ namespace Vampire.Backpack
             }
 
             RegisterEntity(item);
+            ApplyEntitySize(item);
             PositionEntity(item, anchorCol, anchorRow, itemContainer);
             item.SetPlacement(this, anchorCol, anchorRow);
         }

@@ -17,6 +17,11 @@ namespace Vampire.Backpack
         [Tooltip("在网格中的高度（格数）")]
         [SerializeField] protected int gridHeight = 1;
 
+        // 真实尺寸（背包格的 cellSize/spacing），由 SetGridSize 缓存。
+        // 用于 ApplyRealSize：拖拽中、暂存区、放回背包时还原真实大小。
+        private Vector2 realCellSize = new Vector2(100, 100);
+        private Vector2 realSpacing = Vector2.zero;
+
         protected RectTransform rectTransform;
         protected CanvasGroup canvasGroup;
         protected Transform originalParent;
@@ -53,11 +58,14 @@ namespace Vampire.Backpack
 
         /// <summary>
         /// 设置网格尺寸并更新 RectTransform sizeDelta。
+        /// 同时缓存真实 cellSize/spacing，供 ApplyRealSize 还原。
         /// </summary>
         public void SetGridSize(int width, int height, Vector2 cellSize, Vector2 spacing)
         {
             gridWidth = width;
             gridHeight = height;
+            realCellSize = cellSize;
+            realSpacing = spacing;
             UpdateSize(cellSize, spacing);
         }
 
@@ -66,6 +74,29 @@ namespace Vampire.Backpack
             float w = gridWidth * cellSize.x + Mathf.Max(0, gridWidth - 1) * spacing.x;
             float h = gridHeight * cellSize.y + Mathf.Max(0, gridHeight - 1) * spacing.y;
             rectTransform.sizeDelta = new Vector2(w, h);
+        }
+
+        /// <summary>
+        /// 还原为真实背包尺寸（拖拽中、暂存区、放入背包时使用）。
+        /// </summary>
+        public void ApplyRealSize()
+        {
+            UpdateSize(realCellSize, realSpacing);
+        }
+
+        /// <summary>
+        /// 等比缩放到 available 内（商店槽位使用）。
+        /// 维持 gridWidth×gridHeight（含 spacing）的宽高比，居中后刚好不超出 available。
+        /// </summary>
+        public void ApplyFitSize(Vector2 available)
+        {
+            if (gridWidth <= 0 || gridHeight <= 0) return;
+            float realW = gridWidth * realCellSize.x + Mathf.Max(0, gridWidth - 1) * realSpacing.x;
+            float realH = gridHeight * realCellSize.y + Mathf.Max(0, gridHeight - 1) * realSpacing.y;
+            if (realW <= 0f || realH <= 0f) return;
+            if (available.x <= 0f || available.y <= 0f) return;
+            float scale = Mathf.Min(available.x / realW, available.y / realH);
+            rectTransform.sizeDelta = new Vector2(realW * scale, realH * scale);
         }
 
         /// <summary>由 BackpackGrid 调用，记录当前所在 grid 与锚点。</summary>
@@ -110,6 +141,9 @@ namespace Vampire.Backpack
             dragLayer = rootCanvas.transform;
             transform.SetParent(dragLayer);
             transform.SetAsLastSibling();
+
+            // 拖拽中以真实大小显示（从商店拖出时从 fit 尺寸还原）
+            ApplyRealSize();
 
             canvasGroup.blocksRaycasts = false;
             canvasGroup.alpha = 0.7f;
@@ -196,6 +230,24 @@ namespace Vampire.Backpack
             // 兜底：回到原父级原位置
             transform.SetParent(originalParent);
             rectTransform.anchoredPosition = originalAnchoredPosition;
+            ApplySizeForParent(originalParent);
+        }
+
+        /// <summary>
+        /// 根据目标父级应用对应尺寸：
+        /// - ShopSlot：fit 到槽位
+        /// - 其他（暂存区/根）：真实尺寸
+        /// </summary>
+        private void ApplySizeForParent(Transform parent)
+        {
+            if (parent == null) return;
+            ShopSlot shop = parent.GetComponent<ShopSlot>();
+            if (shop != null)
+            {
+                ApplyFitSize(shop.GetFitSize());
+                return;
+            }
+            ApplyRealSize();
         }
 
         public void Rotate()
@@ -209,16 +261,14 @@ namespace Vampire.Backpack
             gridWidth = gridHeight;
             gridHeight = tmp;
 
-            BackpackGrid grid = homeGrid ?? currentGrid ?? GetPreviewGrid();
-            if (grid != null)
-            {
-                grid.ApplyEntitySize(this);
-            }
+            // 旋转只在拖拽中触发，直接用真实尺寸
+            ApplyRealSize();
         }
 
         void Update()
         {
-            if (IsDragging && Input.GetKeyDown(KeyCode.R))
+            if (!IsDragging) return;
+            if (Input.GetKeyDown(KeyCode.R) || Input.GetMouseButtonDown(1))
             {
                 Rotate();
             }

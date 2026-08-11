@@ -111,7 +111,10 @@ namespace Vampire.Backpack
             item.gameObject.SetActive(true);
             ConfigureItem(item, label, w, h, color);
             item.ClearGridAssociation();
-            item.GetComponent<RectTransform>().anchoredPosition = Vector2.zero;
+            RectTransform rt = item.GetComponent<RectTransform>();
+            rt.anchoredPosition = Vector2.zero;
+            // 商店内以 fit 尺寸显示
+            item.ApplyFitSize(slot.GetComponent<ShopSlot>().GetFitSize());
         }
 
         private void SpawnGridTileInShop(int slotIndex, int w, int h)
@@ -122,7 +125,10 @@ namespace Vampire.Backpack
             tile.gameObject.SetActive(true);
             ConfigureGridTile(tile, w, h, gridTileColor);
             tile.ClearGridAssociation();
-            tile.GetComponent<RectTransform>().anchoredPosition = Vector2.zero;
+            RectTransform rt = tile.GetComponent<RectTransform>();
+            rt.anchoredPosition = Vector2.zero;
+            // 商店内以 fit 尺寸显示
+            tile.ApplyFitSize(slot.GetComponent<ShopSlot>().GetFitSize());
         }
 
         // —— 配置 ——
