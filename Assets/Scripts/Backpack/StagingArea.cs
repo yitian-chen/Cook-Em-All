@@ -27,6 +27,9 @@ namespace Vampire.Backpack
             RectTransform entityRect = entity.GetComponent<RectTransform>();
             entity.transform.SetParent(transform);
 
+            // 暂存区在商店外，以真实大小显示
+            entity.ApplyRealSize();
+
             if (RectTransformUtility.ScreenPointToLocalPointInRectangle(
                     rectTransform,
                     eventData.position,
