@@ -165,7 +165,16 @@ namespace Vampire.Backpack
             // 让其他实体不阻挡 raycast，确保 raycast 穿透到 baseplate slot
             BackpackGrid grid = GetPreviewGrid();
             if (grid != null) grid.SetOthersNonRaycasting(this);
+
+            // 子类钩子：例如 GridTile 把跟随道具 reparent 到自己下，视觉上一起拖动
+            OnDragStarted();
         }
+
+        /// <summary>
+        /// 拖拽开始后的钩子（在 reparent 到 dragLayer、设置 alpha/raycast 之后调用）。
+        /// 子类可 override 实现额外视觉行为，例如 GridTile 把跟随道具挂到自己下。
+        /// </summary>
+        protected virtual void OnDragStarted() { }
 
         public void OnDrag(PointerEventData eventData)
         {
@@ -218,11 +227,19 @@ namespace Vampire.Backpack
             // 配合 BackpackGrid 内部的锚点钳制，缩窄"分界线"不可放置区。
             if (grid != null && grid.TryPlaceAtCursor(this, eventData.position, eventData.pressEventCamera))
             {
+                OnDragEnded();
                 return;
             }
 
             ReturnToOriginal();
+            OnDragEnded();
         }
+
+        /// <summary>
+        /// 拖拽结束后的清理钩子（在所有放置/回原位逻辑之后调用）。
+        /// 子类可 override 清理临时视觉状态，例如 GridTile 把残留的跟随道具 reparent 回 itemContainer。
+        /// </summary>
+        protected virtual void OnDragEnded() { }
 
         /// <summary>
         /// 回到拖拽开始时的位置。
@@ -272,7 +289,7 @@ namespace Vampire.Backpack
             ApplyRealSize();
         }
 
-        public void Rotate()
+        public virtual void Rotate()
         {
             RotateInternal();
         }
