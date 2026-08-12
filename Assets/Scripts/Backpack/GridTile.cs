@@ -45,16 +45,20 @@ namespace Vampire.Backpack
 
             Vector2 cell = homeGrid.CellSize;
             Vector2 sp = homeGrid.Spacing;
+            float pitchX = cell.x + sp.x;
+            float pitchY = cell.y + sp.y;
             foreach (var item in following)
             {
                 if (item == null) continue;
-                // 道具锚点相对格子锚点的格子偏移
-                int dc = item.CurrentAnchorCol - homeAnchorCol;
-                int dr = item.CurrentAnchorRow - homeAnchorRow;
-                // 像素偏移：x 向右为正，y 向下为负（ RectTransform 锚点中心 ）
-                Vector2 offset = new Vector2(
-                    dc * (cell.x + sp.x),
-                    -dr * (cell.y + sp.y));
+                // 道具中心相对格子中心的像素偏移：
+                //   锚点差 × pitch + 尺寸差 × 0.5 × pitch
+                // 后者修正多格道具/格子的中心不在锚点格中心的问题（与 BackpackGrid.PositionEntity 一致）。
+                float dx = (item.CurrentAnchorCol - homeAnchorCol) * pitchX
+                         + (item.GridWidth - gridWidth) * 0.5f * pitchX;
+                float dy = (item.CurrentAnchorRow - homeAnchorRow) * pitchY
+                         + (item.GridHeight - gridHeight) * 0.5f * pitchY;
+                // y 向下为负
+                Vector2 offset = new Vector2(dx, -dy);
                 item.transform.SetParent(transform, false);
                 item.Rect.anchoredPosition = offset;
                 draggingItems.Add(item);
