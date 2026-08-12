@@ -49,6 +49,16 @@ namespace Vampire.Backpack
         public BackpackGrid CurrentGrid => currentGrid;
         public RectTransform Rect => rectTransform;
 
+        // 拖拽开始时记录的原始位置（OnBeginDrag 中赋值），用于移动格子时识别"旧位置"，
+        // 并判定哪些道具完全位于旧 footprint 上（应跟随移动）。
+        public BackpackGrid HomeGrid => homeGrid;
+        public int HomeAnchorCol => homeAnchorCol;
+        public int HomeAnchorRow => homeAnchorRow;
+
+        // 当前所在 grid 的锚点（由 SetPlacement 维护），供 BackpackGrid 查询道具占用位置。
+        public int CurrentAnchorCol => currentAnchorCol;
+        public int CurrentAnchorRow => currentAnchorRow;
+
         void Awake()
         {
             rectTransform = GetComponent<RectTransform>();
