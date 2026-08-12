@@ -317,6 +317,14 @@ namespace Vampire.Backpack
             float pitchY = cellSize.y + spacing.y;
             int anchorCol = Mathf.RoundToInt((topLeftX - padding.left) / pitchX);
             int anchorRow = Mathf.RoundToInt((topLeftY - padding.top) / pitchY);
+
+            // 钳制锚点到网格可容纳范围内，缩窄边缘"死区"——
+            // 光标落在边缘格附近时，物品吸附到能放下的最近位置，而不是直接弹回。
+            int maxCol = Mathf.Max(0, cols - entity.GridWidth);
+            int maxRow = Mathf.Max(0, rows - entity.GridHeight);
+            anchorCol = Mathf.Clamp(anchorCol, 0, maxCol);
+            anchorRow = Mathf.Clamp(anchorRow, 0, maxRow);
+
             return new Vector2Int(anchorCol, anchorRow);
         }
 
