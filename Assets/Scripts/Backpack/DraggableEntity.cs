@@ -289,7 +289,7 @@ namespace Vampire.Backpack
             ApplyRealSize();
         }
 
-        public void Rotate()
+        public virtual void Rotate()
         {
             RotateInternal();
         }

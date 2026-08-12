@@ -43,11 +43,28 @@ namespace Vampire.Backpack
             var following = homeGrid.GetFollowingItemsForTile(this);
             if (following.Count == 0) return;
 
+            foreach (var item in following)
+            {
+                if (item == null) continue;
+                item.transform.SetParent(transform, false);
+                draggingItems.Add(item);
+            }
+            RefreshFollowingItemOffsets();
+        }
+
+        /// <summary>
+        /// 根据当前 gridWidth/gridHeight 和每个跟随道具的格子坐标位置，
+        /// 重算它们相对格子中心的像素偏移（anchoredPosition）。
+        /// 旋转格子后调用以保持道具与格子的正确相对位置。
+        /// </summary>
+        private void RefreshFollowingItemOffsets()
+        {
+            if (homeGrid == null || draggingItems.Count == 0) return;
             Vector2 cell = homeGrid.CellSize;
             Vector2 sp = homeGrid.Spacing;
             float pitchX = cell.x + sp.x;
             float pitchY = cell.y + sp.y;
-            foreach (var item in following)
+            foreach (var item in draggingItems)
             {
                 if (item == null) continue;
                 // 道具中心相对格子中心的像素偏移：
@@ -58,11 +75,42 @@ namespace Vampire.Backpack
                 float dy = (item.CurrentAnchorRow - homeAnchorRow) * pitchY
                          + (item.GridHeight - gridHeight) * 0.5f * pitchY;
                 // y 向下为负
-                Vector2 offset = new Vector2(dx, -dy);
-                item.transform.SetParent(transform, false);
-                item.Rect.anchoredPosition = offset;
-                draggingItems.Add(item);
+                item.Rect.anchoredPosition = new Vector2(dx, -dy);
             }
+        }
+
+        /// <summary>
+        /// 旋转格子（方案B）：交换 gridWidth/gridHeight，跟随道具保持朝向和格子坐标相对位置 (dc, dr) 不变。
+        /// 若旋转后任何跟随道具在新尺寸 footprint 内放不下（dc+itemW &gt; newW 或 dr+itemH &gt; newH），则不允许此次旋转。
+        /// </summary>
+        public override void Rotate()
+        {
+            int newW = gridHeight;
+            int newH = gridWidth;
+
+            // 校验跟随道具：旋转后在新尺寸 footprint 内是否仍能完全放下
+            if (draggingItems.Count > 0 && homeGrid != null)
+            {
+                foreach (var item in draggingItems)
+                {
+                    if (item == null) continue;
+                    int dc = item.CurrentAnchorCol - homeAnchorCol;
+                    int dr = item.CurrentAnchorRow - homeAnchorRow;
+                    if (dc + item.GridWidth > newW || dr + item.GridHeight > newH)
+                    {
+                        return; // 旋转后道具会超出格子，不允许
+                    }
+                }
+            }
+
+            // 执行旋转
+            int tmp = gridWidth;
+            gridWidth = gridHeight;
+            gridHeight = tmp;
+            ApplyRealSize();
+
+            // 重算跟随道具的像素偏移（用新 gridWidth/gridHeight）
+            RefreshFollowingItemOffsets();
         }
 
         /// <summary>
