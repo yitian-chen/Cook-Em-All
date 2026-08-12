@@ -133,24 +133,15 @@ namespace Vampire.Backpack
             return col >= 0 && col < cols && row >= 0 && row < rows && gridTileMap[col, row] != null;
         }
 
-        /// <summary>该格子上是否承载着任何道具（用于禁止移动带道具的格子）。</summary>
-        public bool HasItemsOnTile(GridTile tile)
-        {
-            if (tile == null) return false;
-            for (int c = 0; c < cols; c++)
-            {
-                for (int r = 0; r < rows; r++)
-                {
-                    if (gridTileMap[c, r] == tile && itemMap[c, r] != null)
-                        return true;
-                }
-            }
-            return false;
-        }
-
         // ===================== 格子层 =====================
 
-        /// <summary>格子能否放在指定锚点：footprint 每格在界内且无其他格子占用。</summary>
+        /// <summary>
+        /// 格子能否放在指定锚点：
+        /// 1. footprint 每格在界内且无其他格子占用
+        /// 2. 放下后所有道具仍有格子支撑（不能有道具落到底板上）
+        /// 条件 2 针对移动带道具的格子：若新位置不再覆盖某道具所在格、且该格无其他格子，
+        /// 该道具会失去支撑 → 禁止此次移动。
+        /// </summary>
         public bool CanPlaceGridTile(GridTile tile, int anchorCol, int anchorRow)
         {
             if (tile == null) return false;
@@ -164,6 +155,19 @@ namespace Vampire.Backpack
                     int r = anchorRow + dr;
                     if (c < 0 || c >= cols || r < 0 || r >= rows) return false;
                     if (gridTileMap[c, r] != null && gridTileMap[c, r] != tile) return false;
+                }
+            }
+
+            // 检查移动后是否有道具失去格子支撑（落到底板）
+            for (int c = 0; c < cols; c++)
+            {
+                for (int r = 0; r < rows; r++)
+                {
+                    if (itemMap[c, r] == null) continue;
+                    bool supportedByOther = gridTileMap[c, r] != null;
+                    bool supportedByThis = c >= anchorCol && c < anchorCol + w
+                                         && r >= anchorRow && r < anchorRow + h;
+                    if (!supportedByOther && !supportedByThis) return false;
                 }
             }
             return true;
