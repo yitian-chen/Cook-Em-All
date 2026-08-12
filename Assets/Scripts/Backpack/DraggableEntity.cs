@@ -199,11 +199,19 @@ namespace Vampire.Backpack
             }
 
             // 若 OnDrop 已 reparent（grid/shop/staging 接管），transform.parent != dragLayer
-            // 若没命中任何 IDropHandler，回到原位
-            if (transform.parent == dragLayer)
+            if (transform.parent != dragLayer)
             {
-                ReturnToOriginal();
+                return;
             }
+
+            // OnDrop 未触发（如光标落在格子间隙）或放置失败：尝试在光标位置放置。
+            // 配合 BackpackGrid 内部的锚点钳制，缩窄"分界线"不可放置区。
+            if (grid != null && grid.TryPlaceAtCursor(this, eventData.position, eventData.pressEventCamera))
+            {
+                return;
+            }
+
+            ReturnToOriginal();
         }
 
         /// <summary>
