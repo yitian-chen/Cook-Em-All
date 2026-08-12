@@ -268,6 +268,38 @@ namespace Vampire.Backpack
         }
 
         /// <summary>
+        /// 返回完全位于 tile 旧 footprint（HomeAnchor/HomeGrid）上的道具列表。
+        /// 用于 GridTile 拖动时把这些道具作为视觉子物体一起带走。
+        /// 调用时机：OnBeginDrag 已记录 HomeGrid/HomeAnchor 并从 gridTileMap 移除 tile，
+        /// 但 itemMap 仍保留道具占用，因此可按旧 footprint 扫描 itemMap。
+        /// </summary>
+        public List<DraggableItem> GetFollowingItemsForTile(GridTile tile)
+        {
+            var result = new List<DraggableItem>();
+            if (tile == null || tile.HomeGrid != this) return result;
+            int oldCol = tile.HomeAnchorCol;
+            int oldRow = tile.HomeAnchorRow;
+            int w = tile.GridWidth;
+            int h = tile.GridHeight;
+            HashSet<DraggableItem> seen = new HashSet<DraggableItem>();
+            for (int dc = 0; dc < w; dc++)
+            {
+                for (int dr = 0; dr < h; dr++)
+                {
+                    int c = oldCol + dc;
+                    int r = oldRow + dr;
+                    if (c < 0 || c >= cols || r < 0 || r >= rows) continue;
+                    DraggableItem item = itemMap[c, r];
+                    if (item != null && IsItemFullyOnFootprint(item, oldCol, oldRow, w, h) && seen.Add(item))
+                    {
+                        result.Add(item);
+                    }
+                }
+            }
+            return result;
+        }
+
+        /// <summary>
         /// 放置格子到指定锚点。调用前应已通过 CanPlaceGridTile 验证。
         /// 若为移动场景（tile.HomeGrid == this），完全位于旧 footprint 的道具会跟随移动到新位置；
         /// 部分位于旧 footprint 的道具保持原位。
