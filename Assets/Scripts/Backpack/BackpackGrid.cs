@@ -434,6 +434,22 @@ namespace Vampire.Backpack
             }
         }
 
+        /// <summary>返回所有已放置的道具（按 itemMap 扫描去重）。</summary>
+        public List<DraggableItem> GetItems()
+        {
+            var items = new List<DraggableItem>();
+            var seen = new HashSet<DraggableItem>();
+            for (int c = 0; c < cols; c++)
+            {
+                for (int r = 0; r < rows; r++)
+                {
+                    var it = itemMap[c, r];
+                    if (it != null && seen.Add(it)) items.Add(it);
+                }
+            }
+            return items;
+        }
+
         /// <summary>
         /// 道具置换放置：A 拖到 B 占据的位置时，A 占据该格，B（及其他被覆盖的道具）自动弹到暂存区。
         /// 校验 footprint 每格在界内、下方有格子（**不**校验道具占用 —— 占用的其他道具会被弹走）。

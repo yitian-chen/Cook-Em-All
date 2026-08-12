@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.Pool;
+using UnityEngine.Events;
 using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
@@ -61,6 +62,13 @@ namespace Vampire
         public Inventory Inventory { get => inventory; }
         public AbilitySelectionDialog AbilitySelectionDialog { get; private set; }
         public SpatialHashGrid Grid { get => grid; }
+
+        /// <summary>
+        /// 玩家击杀怪物时触发（集中的持久事件，避免订阅单个 Monster.OnKilled ——
+        /// 后者在 Invoke 后会 RemoveAllListeners）。
+        /// 注意：仅在 killedByPlayer=true 时触发，KillAllMonsters 等清理操作不会触发。
+        /// </summary>
+        public UnityEvent<Monster> OnMonsterKilledByPlayer { get; } = new UnityEvent<Monster>();
 
         public void Init(LevelBlueprint levelBlueprint, Character character, Inventory inventory, StatsManager statsManager, InfiniteBackground infiniteBackground, AbilitySelectionDialog abilitySelectionDialog)
         {
@@ -205,6 +213,7 @@ namespace Vampire
             if (killedByPlayer)
             {
                 statsManager.IncrementMonstersKilled();
+                OnMonsterKilledByPlayer.Invoke(monster);
             }
             grid.RemoveClient(monster);
             monsterPools[monsterPoolIndex].Release(monster);
