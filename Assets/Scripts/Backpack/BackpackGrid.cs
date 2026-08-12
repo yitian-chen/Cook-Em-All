@@ -38,6 +38,10 @@ namespace Vampire.Backpack
         // 预览状态
         private readonly List<BackpackSlot> previewedSlots = new List<BackpackSlot>();
 
+        // 暂存区懒加载缓存（用于道具置换弹开）
+        private StagingArea cachedStagingArea;
+        private bool stagingAreaCached;
+
         public RectTransform Rect => rectTransform;
         public int Cols => cols;
         public int Rows => rows;
@@ -430,6 +434,84 @@ namespace Vampire.Backpack
             }
         }
 
+        /// <summary>
+        /// 道具置换放置：A 拖到 B 占据的位置时，A 占据该格，B（及其他被覆盖的道具）自动弹到暂存区。
+        /// 校验 footprint 每格在界内、下方有格子（**不**校验道具占用 —— 占用的其他道具会被弹走）。
+        /// 收集到的 displaced 列表通过 out 返回，调用方据此决定是否走置换路径。
+        /// 若 displaced 非空但场景中无 StagingArea，返回 false（无处可弹）。
+        /// </summary>
+        public bool CanPlaceItemWithDisplacement(DraggableItem item, int anchorCol, int anchorRow, out List<DraggableItem> displaced)
+        {
+            displaced = null;
+            if (item == null) return false;
+            int w = item.GridWidth;
+            int h = item.GridHeight;
+
+            // 界内 + 下方有格子（不校验道具占用）
+            for (int dc = 0; dc < w; dc++)
+            {
+                for (int dr = 0; dr < h; dr++)
+                {
+                    int c = anchorCol + dc;
+                    int r = anchorRow + dr;
+                    if (c < 0 || c >= cols || r < 0 || r >= rows) return false;
+                    if (gridTileMap[c, r] == null) return false;
+                }
+            }
+
+            // 收集 footprint 上的其他道具（去重）
+            displaced = new List<DraggableItem>();
+            for (int dc = 0; dc < w; dc++)
+            {
+                for (int dr = 0; dr < h; dr++)
+                {
+                    int c = anchorCol + dc;
+                    int r = anchorRow + dr;
+                    DraggableItem occ = itemMap[c, r];
+                    if (occ != null && occ != item && !displaced.Contains(occ))
+                    {
+                        displaced.Add(occ);
+                    }
+                }
+            }
+
+            // 没有被覆盖的道具 → 走普通路径（让调用方继续尝试 CanPlaceItem）
+            if (displaced.Count == 0) return false;
+
+            // 有道具要弹开 → 必须有暂存区
+            return GetStagingArea() != null;
+        }
+
+        /// <summary>
+        /// 执行置换放置：把 displaced 列表中的道具全部弹到暂存区，然后放下 item。
+        /// 调用前应已通过 CanPlaceItemWithDisplacement 验证。
+        /// </summary>
+        public void PlaceItemWithDisplacement(DraggableItem item, int anchorCol, int anchorRow, List<DraggableItem> displaced)
+        {
+            StagingArea staging = GetStagingArea();
+            if (displaced != null && staging != null)
+            {
+                foreach (var d in displaced)
+                {
+                    if (d == null) continue;
+                    RemoveItem(d);
+                    staging.AcceptEntity(d);
+                }
+            }
+            PlaceItem(item, anchorCol, anchorRow);
+        }
+
+        /// <summary>暂存区懒加载（场景中通常只有一个 StagingArea）。</summary>
+        private StagingArea GetStagingArea()
+        {
+            if (!stagingAreaCached)
+            {
+                cachedStagingArea = FindObjectOfType<StagingArea>();
+                stagingAreaCached = true;
+            }
+            return cachedStagingArea;
+        }
+
         // ===================== 定位与放置入口 =====================
 
         /// <summary>把实体放到对应容器中，位置用数学计算对齐到锚点 slot 中心 + 多格偏移。</summary>
@@ -464,6 +546,18 @@ namespace Vampire.Backpack
                 entity.PlaceAt(this, anchor.x, anchor.y);
                 return true;
             }
+
+            // 道具专属 fallback：覆盖其他道具时，把被覆盖的道具弹到暂存区
+            if (entity is DraggableItem item)
+            {
+                List<DraggableItem> displaced;
+                if (CanPlaceItemWithDisplacement(item, anchor.x, anchor.y, out displaced))
+                {
+                    PlaceItemWithDisplacement(item, anchor.x, anchor.y, displaced);
+                    return true;
+                }
+            }
+
             return false;
         }
 
@@ -512,6 +606,12 @@ namespace Vampire.Backpack
 
             Vector2Int anchor = ComputeAnchorFromCursor(entity, screenPos, cam);
             bool valid = entity.CanPlaceAt(this, anchor.x, anchor.y);
+
+            // 道具专属：覆盖其他道具时，置换弹开也算有效放置 → 显示绿色
+            if (!valid && entity is DraggableItem item)
+            {
+                valid = CanPlaceItemWithDisplacement(item, anchor.x, anchor.y, out _);
+            }
 
             for (int dc = 0; dc < entity.GridWidth; dc++)
             {
