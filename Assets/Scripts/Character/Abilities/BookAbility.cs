@@ -62,5 +62,17 @@ namespace Vampire
             book.Init(this, monsterLayer);
             books.Add(book);
         }
+
+        /// <summary>BookAbility 销毁时连带销毁它创建的环绕物体。
+        /// 环绕物体挂在 playerCharacter 下，不会随 BookAbility 自动销毁，
+        /// 不清理会跨波次残留并静止堆积。</summary>
+        private void OnDestroy()
+        {
+            if (books == null) return;
+            foreach (Book book in books)
+            {
+                if (book != null) Destroy(book.gameObject);
+            }
+        }
     }
 }
