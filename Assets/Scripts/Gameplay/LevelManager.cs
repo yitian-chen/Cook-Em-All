@@ -36,8 +36,8 @@ namespace Vampire
             entityManager.SpawnGemsAroundPlayer(this.levelBlueprint.initialExpGemCount, this.levelBlueprint.initialExpGemType);
             // Initialize the infinite background
             infiniteBackground.Init(this.levelBlueprint.backgroundTexture, playerCharacter.transform);
-            // Initialize inventory
-            inventory.Init();
+            // Initialize inventory (legacy system, may be null — backpack grid supersedes it)
+            if (inventory != null) inventory.Init();
             // Initialize wave manager (种子化背包、进入初始整备阶段、订阅击杀事件)
             if (waveManager != null)
             {

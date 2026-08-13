@@ -1,16 +1,17 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Vampire
 {
     public class MainMenu : MonoBehaviour
     {
-        [SerializeField] private CharacterSelector characterSelector;
+        [SerializeField] private CharacterBlueprint defaultCharacter;
 
-        void Start()
+        /// <summary>开始按钮调用：用默认角色直接进入 Level 1。</summary>
+        public void StartDefaultGame()
         {
-            characterSelector.Init();
+            CrossSceneData.CharacterBlueprint = defaultCharacter;
+            SceneManager.LoadScene(1);
         }
     }
 }
