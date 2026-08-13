@@ -27,7 +27,17 @@ namespace Vampire
         public void Init(Texture2D backgroundTexture, Transform playerTransform)
         {
             this.playerTransform = playerTransform;
-            backgroundMaterial.mainTexture = backgroundTexture;
+            if (backgroundTexture != null)
+            {
+                backgroundMaterial.mainTexture = backgroundTexture;
+                backgroundMaterial.SetColor("_Tint", Color.white);
+            }
+            else
+            {
+                // 无贴图时渲染为纯灰色（_MainTex 默认白色 × 灰色 _Tint = 灰）
+                backgroundMaterial.mainTexture = null;
+                backgroundMaterial.SetColor("_Tint", new Color(0.5f, 0.5f, 0.5f, 1f));
+            }
             backgroundMaterial.SetFloat("_Shockwave", 0);
             resetOffset = Vector2.zero;
             backgroundMaterial.SetVector("_ResetOffset", resetOffset);

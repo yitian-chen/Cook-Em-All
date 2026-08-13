@@ -88,7 +88,7 @@ namespace Vampire
             // Initialize starting health and exp
             currentHealth = characterBlueprint.hp;
             healthBar.Setup(currentHealth, 0, characterBlueprint.hp);
-            expBar.Setup(currentExp, 0, nextLevelExp);
+            if (expBar != null) expBar.Setup(currentExp, 0, nextLevelExp);
             currentLevel = 1;
             UpdateLevelDisplay();
             // Initialize animations
@@ -139,18 +139,18 @@ namespace Vampire
                     float expDiff = nextLevelExp - currentExp;
                     currentExp += expDiff;
                     exp -= expDiff;
-                    expBar.Setup(currentExp, 0, nextLevelExp);  // Temp make the exp bar appear to be full
+                    if (expBar != null) expBar.Setup(currentExp, 0, nextLevelExp);  // Temp make the exp bar appear to be full
                     // Wait until the player has finished leveling up
                     yield return LevelUpCoroutine();
                     // Update the exp bar to show the progress to the next level
                     float prevLevelExp = nextLevelExp;
                     expToNextLevel += characterBlueprint.LevelToExpIncrease(currentLevel);
                     nextLevelExp += expToNextLevel;
-                    expBar.Setup(currentExp, prevLevelExp, nextLevelExp);
+                    if (expBar != null) expBar.Setup(currentExp, prevLevelExp, nextLevelExp);
                 }
                 // Add remaining exp
                 currentExp += exp;
-                expBar.AddPoints(exp);
+                if (expBar != null) expBar.AddPoints(exp);
             }
         }
 
@@ -168,7 +168,7 @@ namespace Vampire
 
         private void UpdateLevelDisplay()
         {
-            levelText.text = "LV " + currentLevel;
+            if (levelText != null) levelText.text = "LV " + currentLevel;
         }
 
         public override void Knockback(Vector2 knockback)

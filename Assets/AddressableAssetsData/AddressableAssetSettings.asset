@@ -46,14 +46,11 @@ MonoBehaviour:
   - {fileID: 11400000, guid: d37803cb3c6964b9e8ca41eceb69e32a, type: 2}
   - {fileID: 11400000, guid: e102c3bfe320b407880f7a3133513a02, type: 2}
   - {fileID: 11400000, guid: 96e7fdf0e38ee4fdfa1c36d70fb320a8, type: 2}
-  - {fileID: 11400000, guid: 671a706c0cb5b4fa18aca8b7a882abc4, type: 2}
   - {fileID: 11400000, guid: 4884f97b5e32b4b72b3d417cd9a0acff, type: 2}
   - {fileID: 11400000, guid: e900a7c6a692c415c93e71fcc580f887, type: 2}
-  - {fileID: 11400000, guid: 464847ef45c9d40459d2206da6198ca2, type: 2}
   - {fileID: 11400000, guid: 828b741093b6c40558202d6443af4333, type: 2}
   - {fileID: 11400000, guid: 31f109877b3244ad8aa6dc6bd094439b, type: 2}
   - {fileID: 11400000, guid: 616dbf8d4955449479b4bab5e05c8456, type: 2}
-  - {fileID: 11400000, guid: 2c22a599ec5d14380ab96fabe3bd42cf, type: 2}
   - {fileID: 11400000, guid: 1f9fe172d3cc44242818a8c6e373f607, type: 2}
   - {fileID: 11400000, guid: 672574b1c24cd49e79995c68968cfb55, type: 2}
   m_BuildSettings:
@@ -100,7 +97,6 @@ MonoBehaviour:
     - Locale
     - Locale-zh
     - Preload
-    - Locale-zh-Hant
     - Locale-en
   m_SchemaTemplates: []
   m_GroupTemplateObjects:
