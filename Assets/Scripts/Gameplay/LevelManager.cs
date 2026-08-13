@@ -32,8 +32,8 @@ namespace Vampire
             // Initialize the character
             playerCharacter.Init(entityManager, abilityManager, statsManager);
             playerCharacter.OnDeath.AddListener(GameOver);
-            // Spawn initial gems
-            entityManager.SpawnGemsAroundPlayer(this.levelBlueprint.initialExpGemCount, this.levelBlueprint.initialExpGemType);
+            // 经验钻石已移除（跑通流程期间）
+            // entityManager.SpawnGemsAroundPlayer(this.levelBlueprint.initialExpGemCount, this.levelBlueprint.initialExpGemType);
             // Initialize the infinite background
             infiniteBackground.Init(this.levelBlueprint.backgroundTexture, playerCharacter.transform);
             // Initialize inventory (legacy system, may be null — backpack grid supersedes it)
