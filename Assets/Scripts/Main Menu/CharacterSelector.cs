@@ -32,5 +32,11 @@ namespace Vampire
             CrossSceneData.CharacterBlueprint = characterBlueprint;
             SceneManager.LoadScene(1);
         }
+
+        /// <summary>跳过角色选择，用默认角色（index 0）直接开始。</summary>
+        public void StartDefaultGame()
+        {
+            StartGame(characterBlueprints[0]);
+        }
     }
 }
