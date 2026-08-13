@@ -1,4 +1,4 @@
-# VampireSurvivorsClone
+# 锅里见 / Cook-Em-All
 <p align="center">
   <kbd>
     <img src="https://github.com/matthiasbroske/VampireSurvivorsClone/assets/82914350/03974781-70b2-45ed-bbd6-7148efcebbd7" alt="Demo"/>
@@ -6,7 +6,7 @@
 </p>
 
 ## About
-A Vampire Survivors inspired mobile game built from scratch in Unity.
+A cooking-themed Survivors-like game built in Unity. Play as a chef, fight waves of food monsters, and build your loadout through a backpack grid + shop system between waves.
 
 ### Features
 - 20+ upgradeable weapons and abilities
