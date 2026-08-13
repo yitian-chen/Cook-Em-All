@@ -161,13 +161,8 @@ namespace Vampire
                 // Level up
                 currentLevel++;
                 UpdateLevelDisplay();
-                // Open the level up dialog menu
-                abilitySelectionDialog.Open();
-                // Wait for the menu to be closed
-                while (abilitySelectionDialog.MenuOpen)
-                {
-                    yield return null;
-                }
+                // MVP: 武器/升级改由背包放置驱动，不再开 3 选 1 升级卡片弹窗
+                yield break;
             }
         }
 

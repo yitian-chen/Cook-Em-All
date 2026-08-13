@@ -2,12 +2,14 @@ using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Vampire.Backpack;
 
 namespace Vampire
 {
     public class AbilityManager : MonoBehaviour
     {
         private LevelBlueprint levelBlueprint;
+        private EntityManager entityManager;
         private Character playerCharacter;
         private WeightedAbilities newAbilities;
         private WeightedAbilities ownedAbilities;
@@ -33,29 +35,15 @@ namespace Vampire
         public void Init(LevelBlueprint levelBlueprint, EntityManager entityManager, Character playerCharacter, AbilityManager abilityManager)
         {
             this.levelBlueprint = levelBlueprint;
+            this.entityManager = entityManager;
             this.playerCharacter = playerCharacter;
 
             registeredUpgradeableValues = new FastList<IUpgradeableValue>();
 
+            // MVP: 起始武器与升级池改为由背包驱动（WaveManager 在波次开始时调 RebuildFromBackpack）。
+            // 这里只初始化空列表，不再实例化任何 Ability。
             ownedAbilities = new WeightedAbilities();
-            foreach (GameObject abilityPrefab in playerCharacter.Blueprint.startingAbilities)
-            {
-                Ability ability = Instantiate(abilityPrefab, transform).GetComponent<Ability>();
-                ability.Init(abilityManager, entityManager, playerCharacter);
-                ability.Select();
-                ownedAbilities.Add(ability);
-            }
-            
             newAbilities = new WeightedAbilities();
-            foreach (GameObject abilityPrefab in levelBlueprint.abilityPrefabs)
-            {
-                // Skip any abilities we already own
-                if (playerCharacter.Blueprint.startingAbilities.Contains(abilityPrefab)) continue;
-                
-                Ability ability = Instantiate(abilityPrefab, transform).GetComponent<Ability>();
-                ability.Init(abilityManager, entityManager, playerCharacter);
-                newAbilities.Add(ability);
-            }
         }
 
         public void RegisterUpgradeableValue(IUpgradeableValue upgradeableValue, bool inUse = false)
@@ -138,7 +126,35 @@ namespace Vampire
         {
             foreach (Ability ability in ownedAbilities)
             {
-                Destroy(ability.gameObject);
+                if (ability != null) Destroy(ability.gameObject);
+            }
+            ownedAbilities = new WeightedAbilities();
+        }
+
+        /// <summary>
+        /// 根据背包中放置的武器道具，重建当前波次的 Ability 实例。
+        /// 销毁旧 ownedAbilities，遍历背包中的 WeaponItem，实例化其 abilityPrefab。
+        /// 由 WaveManager 在每波开始时调用。
+        /// </summary>
+        public void RebuildFromBackpack(BackpackGrid grid)
+        {
+            // 销毁旧 abilities 并清空列表（修 latent bug：之前不清空会累积空引用）
+            foreach (Ability ability in ownedAbilities)
+            {
+                if (ability != null) Destroy(ability.gameObject);
+            }
+            ownedAbilities = new WeightedAbilities();
+
+            if (grid == null) return;
+
+            foreach (DraggableItem item in grid.GetItems())
+            {
+                WeaponItem weapon = item as WeaponItem;
+                if (weapon == null || weapon.AbilityPrefab == null) continue;
+                Ability ability = Instantiate(weapon.AbilityPrefab, transform).GetComponent<Ability>();
+                ability.Init(this, entityManager, playerCharacter);
+                ability.Select();
+                ownedAbilities.Add(ability);
             }
         }
 

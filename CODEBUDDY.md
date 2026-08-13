@@ -60,8 +60,9 @@
 | **背包网格系统** | ✅ 原型已实现（`Assets/Scripts/Backpack/`：DraggableEntity 基类 + GridTile/DraggableItem 子类 + BackpackGrid 协调器 + 两层占用表），旧 `Inventory.cs` 待淘汰 | P0，核心 |
 | **物品放置 + 邻接查询** | ✅ 原型已实现（BackpackGrid 维护 gridTileMap/itemMap 两张占用表，邻接查询基础已具备） | P0，核心 |
 | **调味料物品类型 + 加成规则引擎** | 现有升级是"选3选1"升级树，不是可放置实体 | P0，核心 |
-| **商店 UI + 交易逻辑** | 拖拽/槽位原型已实现，购买逻辑未做 | P1，仅局内 |
-| **波次整备阶段流程** | 现有是连续战斗，无波次间整备 | P1 |
+| **商店 UI + 交易逻辑** | 拖拽/槽位原型已实现，整备阶段商店 UI 已接入 Level 1，购买逻辑未做 | P1，仅局内 |
+| **波次整备阶段流程** | ✅ MVP 已实现（WaveManager 状态机：Combat/Prep 切换，击杀数达标触发整备，PreparationController 显隐背包/商店） | P1 |
+| **背包→战斗桥接** | ✅ MVP 已实现（WeaponItem 携带 abilityPrefab，AbilityManager.RebuildFromBackpack 波次开始时重建 Abilities） | P0，核心 |
 | **主菜单/角色选择扩展** | 现有 MainMenu 较简单 | P2 |
 
 > ❌ **明确不做**：局外 meta 商店、局外永久成长、永久解锁系统。单局结束后无任何跨局养成。
@@ -80,12 +81,11 @@
 
 ### 2. 背包网格与武器系统的桥接
 
-现有武器是 Prefab 挂在 AbilityManager 下自动运行。背包版本需要：
-
-- 背包网格存储"武器物品"数据（不是直接挂 Ability 组件）
-- 波次开始时，根据背包内容**实例化对应的 Ability** 到 AbilityManager
-- 武器的数值 = 基础数值 + 背包中调味料对该格的加成总和
-- 波次结束时销毁 Ability 实例，保留背包数据
+✅ MVP 已实现。现有机制：
+- 背包网格存储"武器物品"数据（`WeaponItem`：DraggableItem 子类，携带 `abilityPrefab` 字段）
+- 波次开始时，`AbilityManager.RebuildFromBackpack(grid)` 遍历背包武器，实例化对应 Ability 到 AbilityManager
+- 波次结束时，`DestroyActiveAbilities()` 销毁 Ability 实例，保留背包数据
+- ⏳ 待实现：调味料加成叠加（武器数值 = 基础数值 + 邻接调味料加成总和）
 
 ### 3. 保留现有的 ScriptableObject 数据驱动模式
 
@@ -114,6 +114,9 @@
 - 武器/能力系统架构：详见 `Assets/Scripts/Character/Abilities/Ability.cs` 及其子类
 - 升级值系统：详见 `Assets/Scripts/Utilities/UpgradeableValues.cs`
 - 关卡配置：详见 `Assets/Scripts/ScriptableObjects/LevelBlueprint.cs`
-- 背包两层系统：详见 `Assets/Scripts/Backpack/`（DraggableEntity / GridTile / DraggableItem / BackpackGrid / BackpackSlot / ShopSlot / StagingArea）
-- 原型场景：`Assets/Scenes/Game/Shop Prototype.unity` + `Assets/Scripts/Prototype/ShopPrototype.cs`
+- 背包两层系统：详见 `Assets/Scripts/Backpack/`（DraggableEntity / GridTile / DraggableItem / WeaponItem / BackpackGrid / BackpackSlot / ShopSlot / StagingArea）
+- 波次状态机：详见 `Assets/Scripts/Gameplay/WaveManager.cs`（Combat/Prep 阶段切换）
+- 整备阶段控制器：详见 `Assets/Scripts/Backpack/PreparationController.cs`
+- 整备 UI 预制体：`Assets/Prefabs/PreparationCanvas.prefab`
+- 原型场景：`Assets/Scenes/Game/Shop Prototype.unity`
 - 旧 Inventory（待淘汰）：`Assets/Scripts/Gameplay/Inventory/Inventory.cs`

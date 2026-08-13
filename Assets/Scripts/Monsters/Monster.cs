@@ -169,7 +169,7 @@ namespace Vampire
             // Invoke monster killed callback and remove all listeners
             OnKilled.Invoke(this);
             OnKilled.RemoveAllListeners();
-            entityManager.DespawnMonster(monsterIndex, this, true);
+            entityManager.DespawnMonster(monsterIndex, this, killedByPlayer);
         }
 
         protected virtual void DropLoot()

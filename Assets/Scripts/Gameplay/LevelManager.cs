@@ -15,20 +15,18 @@ namespace Vampire
         [SerializeField] private StatsManager statsManager;
         [SerializeField] private GameOverDialog gameOverDialog;
         [SerializeField] private GameTimer gameTimer;
+        [SerializeField] private WaveManager waveManager;
         private float levelTime = 0;
         private float timeSinceLastMonsterSpawned;
-        private float timeSinceLastChestSpawned;
-        private bool miniBossSpawned = false;
-        private bool finalBossSpawned = false;
 
         public void Init(LevelBlueprint levelBlueprint)
         {
             this.levelBlueprint = levelBlueprint;
             levelTime = 0;
-            
+
             // Initialize the entity manager
             entityManager.Init(this.levelBlueprint, playerCharacter, inventory, statsManager, infiniteBackground, abilitySelectionDialog);
-            // Initialize the ability manager
+            // Initialize the ability manager (MVP: 起始武器由 WaveManager 通过背包重建)
             abilityManager.Init(this.levelBlueprint, entityManager, playerCharacter, abilityManager);
             abilitySelectionDialog.Init(abilityManager, entityManager, playerCharacter);
             // Initialize the character
@@ -36,15 +34,19 @@ namespace Vampire
             playerCharacter.OnDeath.AddListener(GameOver);
             // Spawn initial gems
             entityManager.SpawnGemsAroundPlayer(this.levelBlueprint.initialExpGemCount, this.levelBlueprint.initialExpGemType);
-            // Spawn a singular chest
-            entityManager.SpawnChest(levelBlueprint.chestBlueprint);
             // Initialize the infinite background
             infiniteBackground.Init(this.levelBlueprint.backgroundTexture, playerCharacter.transform);
             // Initialize inventory
             inventory.Init();
+            // Initialize wave manager (种子化背包、进入初始整备阶段、订阅击杀事件)
+            if (waveManager != null)
+            {
+                waveManager.AllWavesCleared.AddListener(LevelPassed);
+                waveManager.Init();
+            }
         }
 
-        // Start is called before the first frame update
+        // Start is called before the first update
         void Start()
         {
             Init(levelBlueprint);
@@ -53,10 +55,14 @@ namespace Vampire
         // Update is called once per frame
         void Update()
         {
+            // 仅在战斗阶段推进时间与刷怪；整备阶段 Time.timeScale=0 已冻结 Update 的有效推进
+            if (waveManager == null || waveManager.Phase != WaveManager.WavePhase.Combat) return;
+
             // Time
             levelTime += Time.deltaTime;
             gameTimer.SetTime(levelTime);
-            // Monster spawning timer
+
+            // Monster spawning timer（基于 levelTime 进度的曲线，沿用现有 LevelBlueprint 配置）
             if (levelTime < levelBlueprint.levelTime)
             {
                 timeSinceLastMonsterSpawned += Time.deltaTime;
@@ -71,30 +77,6 @@ namespace Vampire
                     timeSinceLastMonsterSpawned = Mathf.Repeat(timeSinceLastMonsterSpawned, monsterSpawnDelay);
                 }
             }
-            // Boss spawning
-            if (!miniBossSpawned && levelTime > levelBlueprint.miniBosses[0].spawnTime)
-            {
-                miniBossSpawned = true;
-                entityManager.SpawnMonsterRandomPosition(levelBlueprint.monsters.Length, levelBlueprint.miniBosses[0].bossBlueprint);
-            }
-            // Boss spawning
-            if (!finalBossSpawned && levelTime > levelBlueprint.levelTime)
-            {
-                //entityManager.KillAllMonsters();
-                finalBossSpawned = true;
-                Monster finalBoss = entityManager.SpawnMonsterRandomPosition(levelBlueprint.monsters.Length, levelBlueprint.finalBoss.bossBlueprint);
-                finalBoss.OnKilled.AddListener(LevelPassed);
-            }
-            // Chest spawning timer
-            timeSinceLastChestSpawned += Time.deltaTime;
-            if (timeSinceLastChestSpawned >= levelBlueprint.chestSpawnDelay)
-            {
-                for (int i = 0; i < levelBlueprint.chestSpawnAmount; i++)
-                {
-                    entityManager.SpawnChest(levelBlueprint.chestBlueprint);
-                }
-                timeSinceLastChestSpawned = Mathf.Repeat(timeSinceLastChestSpawned, levelBlueprint.chestSpawnDelay);
-            }
         }
 
         public void GameOver()
@@ -105,7 +87,7 @@ namespace Vampire
             gameOverDialog.Open(false, statsManager);
         }
 
-        public void LevelPassed(Monster finalBossKilled)
+        public void LevelPassed()
         {
             Time.timeScale = 0;
             int coinCount = PlayerPrefs.GetInt("Coins");

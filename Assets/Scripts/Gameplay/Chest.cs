@@ -61,13 +61,12 @@ namespace Vampire
         private IEnumerator Open(bool openedByPlayer = true)
         {
             spriteRenderer.sprite = chestBlueprint.openingChest;
-            bool spawnLoot = !chestBlueprint.abilityChest || !entityManager.AbilitySelectionDialog.HasAvailableAbilities();
+            // MVP: 升级卡片已废弃，宝箱始终掉落物品，不再开升级弹窗
+            bool spawnLoot = true;
             if (spawnLoot)
                 SpawnLoot(chestBlueprint.lootTable.DropLootObject(), openedByPlayer);
             yield return new WaitForSeconds(0.1f);
             spriteRenderer.sprite = chestBlueprint.openChest;
-            if (!spawnLoot)
-                entityManager.AbilitySelectionDialog.Open(false);
             yield return new WaitForSeconds(0.15f);
             float t = 0;
             while (t < 1.0f)
