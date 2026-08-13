@@ -91,7 +91,7 @@ namespace Vampire.Backpack
             if (blueprint != null && blueprint.startingAbilities != null && blueprint.startingAbilities.Length > 0)
             {
                 GameObject abilityPrefab = blueprint.startingAbilities[0];
-                SpawnWeaponItem(0, 2, "W1", 1, 1, weaponColor, abilityPrefab);
+                SpawnWeaponItem(0, 2, "W1", 3, 1, weaponColor, abilityPrefab);
             }
         }
 
@@ -134,9 +134,9 @@ namespace Vampire.Backpack
             CharacterBlueprint blueprint = CrossSceneData.CharacterBlueprint;
             if (blueprint == null || blueprint.startingAbilities == null) return;
             if (blueprint.startingAbilities.Length > 0)
-                SpawnWeaponInShop(0, "菜刀", 1, 1, weaponColor, blueprint.startingAbilities[0]);
+                SpawnWeaponInShop(0, "菜刀", 3, 1, weaponColor, blueprint.startingAbilities[0]);
             if (blueprint.startingAbilities.Length > 1)
-                SpawnWeaponInShop(1, "平底锅", 1, 1, weaponColor, blueprint.startingAbilities[1]);
+                SpawnWeaponInShop(1, "平底锅", 2, 1, weaponColor, blueprint.startingAbilities[1]);
         }
 
         // —— 背包内生成 ——
