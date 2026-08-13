@@ -9,7 +9,7 @@ namespace Vampire
     /// 流程：
     ///   Init() → 订阅击杀事件 → SeedBackpack → 进入初始 Prep（玩家先看背包）→ 等待玩家点"开始波次"
     ///   玩家点按钮 → StartNextWave() → 满血 + RebuildFromBackpack + 进入 Combat
-    ///   杀够 killsRequiredPerWave 只怪 → StartPrepPhase() → 冻结时间 + 清场 + 销毁 Abilities + 显示背包
+    ///   杀够当前波次所需击杀数 → StartPrepPhase() → 冻结时间 + 清场 + 销毁 Abilities + 显示背包
     ///   玩家点按钮 → 若 currentWave &gt; totalWaves 触发 AllWavesCleared；否则进入下一波
     /// </summary>
     public class WaveManager : MonoBehaviour
@@ -17,8 +17,9 @@ namespace Vampire
         public enum WavePhase { Combat, Prep }
 
         [Header("Wave Config (MVP hardcoded)")]
-        [SerializeField] private int totalWaves = 2;
-        [SerializeField] private int killsRequiredPerWave = 10;
+        [SerializeField] private int totalWaves = 10;
+        [SerializeField] private int baseKillsPerWave = 8;
+        [SerializeField] private int killsScalePerWave = 3;
 
         [Header("Dependencies")]
         [SerializeField] private EntityManager entityManager;
@@ -29,8 +30,11 @@ namespace Vampire
         public WavePhase Phase { get; private set; } = WavePhase.Prep;
         public int CurrentWave { get; private set; } = 1;
         public int KillsThisWave { get; private set; } = 0;
-        public int KillsRequiredPerWave => killsRequiredPerWave;
+        public int KillsRequiredPerWave => KillsRequiredForWave(CurrentWave);
         public int TotalWaves => totalWaves;
+
+        /// <summary>指定波次需要击杀的怪物数（按波次线性递增）。</summary>
+        private int KillsRequiredForWave(int wave) => baseKillsPerWave + (wave - 1) * killsScalePerWave;
 
         /// <summary>所有波次完成时触发（LevelManager 监听调用 LevelPassed）。</summary>
         public UnityEvent AllWavesCleared = new UnityEvent();
@@ -62,7 +66,7 @@ namespace Vampire
         {
             if (Phase != WavePhase.Combat) return;  // 防御：prep 期间残留事件不计
             KillsThisWave++;
-            if (KillsThisWave >= killsRequiredPerWave)
+            if (KillsThisWave >= KillsRequiredForWave(CurrentWave))
             {
                 EnterPrepPhase(initial: false);
             }

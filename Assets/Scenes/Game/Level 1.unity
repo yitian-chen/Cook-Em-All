@@ -19675,8 +19675,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ddb350a22bb5def4ca16d61644419c6d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  totalWaves: 2
-  killsRequiredPerWave: 10
+  totalWaves: 10
+  baseKillsPerWave: 8
+  killsScalePerWave: 3
   entityManager: {fileID: 1547352219}
   abilityManager: {fileID: 1727210731}
   playerCharacter: {fileID: 856782961}
