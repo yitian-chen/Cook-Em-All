@@ -174,8 +174,9 @@ namespace Vampire
 
         protected virtual void DropLoot()
         {
-            if (monsterBlueprint.gemLootTable.TryDropLoot(out GemType gemType))
-                entityManager.SpawnExpGem((Vector2)transform.position, gemType);
+            // 经验掉落已移除（跑通流程期间）
+            // if (monsterBlueprint.gemLootTable.TryDropLoot(out GemType gemType))
+            //     entityManager.SpawnExpGem((Vector2)transform.position, gemType);
             if (monsterBlueprint.coinLootTable.TryDropLoot(out CoinType coinType))
                 entityManager.SpawnCoin((Vector2)transform.position, coinType);
         }

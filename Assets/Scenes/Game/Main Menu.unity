@@ -1581,9 +1581,9 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 438191656155057044}
-        m_TargetAssemblyTypeName: Vampire.DialogBox, Assembly-CSharp
-        m_MethodName: Open
+      - m_Target: {fileID: 814364901}
+        m_TargetAssemblyTypeName: Vampire.CharacterSelector, Assembly-CSharp
+        m_MethodName: StartDefaultGame
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}

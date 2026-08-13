@@ -124,17 +124,19 @@ namespace Vampire.Backpack
         }
 
         /// <summary>
-        /// 商店占位物品（MVP：拖拽免费，无购买逻辑）。
+        /// 商店武器道具（MVP：拖拽免费，无购买逻辑）。
+        /// 从 CharacterBlueprint.startingAbilities 读取武器 prefab：
+        /// [0] 作为起始背包武器（见 SeedBackpack），[0]/[1] 同时上架商店供玩家拖入背包。
         /// 后续接入购买系统时替换为数据驱动的商品配置。
         /// </summary>
         private void SeedInitialShopItems()
         {
-            SpawnItemInShop(0, "S1", 1, 1, seasoningColor);
-            SpawnItemInShop(1, "W2", 1, 2, weaponColor);
-            SpawnGridTileInShop(2, 1, 2);
-            SpawnItemInShop(3, "S2", 1, 3, seasoningColor);
-            SpawnGridTileInShop(4, 2, 2);
-            SpawnItemInShop(5, "W3", 1, 1, weaponColor);
+            CharacterBlueprint blueprint = CrossSceneData.CharacterBlueprint;
+            if (blueprint == null || blueprint.startingAbilities == null) return;
+            if (blueprint.startingAbilities.Length > 0)
+                SpawnWeaponInShop(0, "菜刀", 1, 1, weaponColor, blueprint.startingAbilities[0]);
+            if (blueprint.startingAbilities.Length > 1)
+                SpawnWeaponInShop(1, "平底锅", 1, 1, weaponColor, blueprint.startingAbilities[1]);
         }
 
         // —— 背包内生成 ——
@@ -162,6 +164,19 @@ namespace Vampire.Backpack
             DraggableItem item = Instantiate(itemPrefab, slot);
             item.gameObject.SetActive(true);
             ConfigureItem(item, label, w, h, color);
+            item.ClearGridAssociation();
+            RectTransform rt = item.GetComponent<RectTransform>();
+            rt.anchoredPosition = Vector2.zero;
+            item.ApplyFitSize(slot.GetComponent<ShopSlot>().GetFitSize());
+        }
+
+        private void SpawnWeaponInShop(int slotIndex, string label, int w, int h, Color color, GameObject abilityPrefab)
+        {
+            if (slotIndex < 0 || slotIndex >= shopGridParent.childCount) return;
+            Transform slot = shopGridParent.GetChild(slotIndex);
+            WeaponItem item = Instantiate(weaponItemPrefab, slot);
+            item.gameObject.SetActive(true);
+            ConfigureWeaponItem(item, label, w, h, color, abilityPrefab);
             item.ClearGridAssociation();
             RectTransform rt = item.GetComponent<RectTransform>();
             rt.anchoredPosition = Vector2.zero;
